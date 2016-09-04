@@ -6,7 +6,6 @@ import numpy as np
 from collections import defaultdict, OrderedDict
 import theano
 import theano.tensor as T
-import warnings
 import sys
 import time
 from conv_net_classes import *
@@ -129,6 +128,7 @@ def train_conv_net(datasets,
     dropout_cost = classifier.dropout_negative_log_likelihood(y)
     grad_updates = sgd_updates_adadelta(params, dropout_cost, lr_decay, 1e-6, sqr_norm_lim)
     sen_grad_updates = sgd_updates_adadelta(sen_params,sen_cost,lr_decay,1e-6,sqr_norm_lim)
+
     #shuffle dataset and assign to mini batches. if dataset size is not a multiple of mini batches, replicate
     #extra data (at random)
     np.random.seed(3435)
@@ -208,7 +208,6 @@ def train_conv_net(datasets,
     test_size = datasets[2].shape[0]
     test_batch_size = 1
     n_test_batches = int(math.ceil(test_size/float(test_batch_size)))
-    print "number of test batches: " + str(n_test_batches)
     test_layer0_input = Words[T.cast(x.flatten(),dtype="int32")].reshape((x.shape[0]*x.shape[1],1,
                                                                           x.shape[2],Words.shape[1]))
     for conv_layer in conv_layers:
@@ -267,6 +266,7 @@ def train_conv_net(datasets,
     for p in sen_params:
         best_sen_param.append(theano.shared(p.get_value()))
 
+    #training on sentences
     best_sen_val = 0.0
     if whether_train_sen == True:
         print 'pre-train on sentences'
@@ -340,7 +340,6 @@ def train_conv_net(datasets,
             test_loss = [test_model_all(i) for i in xrange(n_test_batches)]
             test_perf = 1- np.sum(test_loss)/float(test_size)
             print "best test performance so far: " + str(test_perf)
-            print test_loss
     test_loss = [test_model_all(i) for i in xrange(n_test_batches)]
     new_test_loss = []
     for i in test_loss:
@@ -483,7 +482,6 @@ def get_idx_from_sent(sent, word_idx_map, max_sen_len=51, max_Doc_len=50, filter
         doc[sen_count,:-1] = np.array(x)
         doc[sen_count,-1] = 1
         sen_count += 1
-
     return doc
 
 def get_idx_from_doc(sent, word_idx_map, max_l=51,k=300,filter_h=5):
@@ -511,7 +509,6 @@ def make_idx_data_cv(revs, word_idx_map, cv, max_sen_len=40,max_Doc_len=40, filt
     for rev in revs:
         if rev['split'] == 9: continue     ###########note that we don't use fold 9!!!!!!!!!!!
         sent = get_idx_from_sent(rev["text"], word_idx_map, max_sen_len, max_Doc_len,filter_h,rev["y"])
-        print rev["y"]
         if rev["split"]==cv:
             test.append(sent)
             test_y.append(rev["y"])
@@ -555,7 +552,7 @@ if __name__=="__main__":
     results = []
     r = range(0,10)
     for i in r:
-        if i == 9 or i!= test_fold:continue
+        if i == 9 :continue
         datasets = make_idx_data_cv(revs, word_idx_map, i, max_sen_len=30,max_Doc_len=40, filter_h=5)
         perf = train_conv_net(datasets,
                               U,
