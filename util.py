@@ -48,34 +48,18 @@ def downsample(X_train):
 def downsample_three(X_train):
     '''
     :param X_train:
-    :param X_label:
     :return: equal sized positive and negative sentences
     '''
     num_neg = np.count_nonzero(X_train[:,-1]==0)
     num_neu = np.count_nonzero(X_train[:,-1]==1)
     num_pos = np.count_nonzero(X_train[:,-1]==2)
-    #print train[labels==1]
     print "number of positive sentences before sampling: "
     print num_pos
     print "nubmer of negative sentences before sampling: "
     print num_neg
     print "number of neutral sentences before sampling: "
     print num_neu
-
     if num_neg>num_pos:
-        '''
-        track = 0
-        while(train[track%train.shape[0],-1]==0): track+=1
-        new_train = np.zeros((1,train.shape[1]))
-        while True:
-            sample = np.random.binomial(1,0.5,1)
-            if sample:
-                new_train = np.vstack((new_train,train[track%train.shape[0],:]))
-            while(train[track%train.shape[0],-1]==0): track+=1
-            if new_train.shape[0]-1+num_pos == num_neg: break
-        #print new_train
-        train = np.vstack((train,new_train[1:,]))
-        '''
         neg_index =  np.nonzero((X_train[:,-1]==0))
         pos_index = np.nonzero(X_train[:,-1]==2)
         neu_index = np.nonzero(X_train[:,-1]==1)
@@ -98,7 +82,6 @@ def downsample_three(X_train):
             count_neu += 1
             if count_neu == num_pos:
                 break
-        #print select
         train = np.vstack((new_select,new_neu_select,X_train[pos_index]))
 
     else:   ##pos > neg
@@ -124,12 +107,11 @@ def downsample_three(X_train):
             count_neu += 1
             if count_neu == num_neg:
                 break
-        #print select
         train = np.vstack((new_select,new_neu_select,X_train[neg_index]))
     return train
+
 def create_batch(sentences,batch_size):
     '''
-
     :param sentences:
     :return: train batches, val batches
     '''
