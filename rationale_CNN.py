@@ -199,9 +199,9 @@ def train_conv_net(datasets,
 
     train_model = theano.function([index], cost, updates=grad_updates,
           givens={
-            x: train_set_x[index],
-              y: train_set_y[index],
-          mark:train_set_mark[index]},
+            x: train_set_x[index*batch_size:(index+1)*batch_size],
+              y: train_set_y[index*batch_size:(index+1)*batch_size],
+          mark:train_set_mark[index*batch_size:(index+1)*batch_size]},
                                   allow_input_downcast = True)
 
     test_pred_layers = []
@@ -279,14 +279,11 @@ def train_conv_net(datasets,
             print "positive sentences after sampling: " + str(np.sum(train_sentences[:,-1]==2))
             print "negative sentences after sampling: " + str(np.sum(train_sentences[:,-1]==0))
             print "neutral sentences after sampling: " + str(np.sum(train_sentences[:,-1]==1))
-            #print util.convert(train_sentences[:50],idx_word_map)    #####print sentences with labels
             train_sentences = np.random.permutation(train_sentences)
             if train_sentences.shape[0]%sen_batch_size!=0:
                         extra_data_num = sen_batch_size - train_sentences.shape[0] % sen_batch_size
                         extra_index = np.random.permutation(range(train_sentences.shape[0]))[:extra_data_num]
                         train_sentences = np.vstack((train_sentences,train_sentences[extra_index]))
-            #sentences = sentences[:batch_size*2]
-            #train_sen,val_sen = util.create_batch(sentences,batch_size)
             train_sen_x, train_sen_y = shared_dataset((train_sentences[:,:-1],train_sentences[:,-1]))
             train_sen_model = theano.function([index],sen_cost,updates=sen_grad_updates,
                                              givens={
@@ -295,7 +292,6 @@ def train_conv_net(datasets,
 
             n_train_sen_batches = train_sentences.shape[0]/sen_batch_size
             for minibatch_index_1 in np.random.permutation(range(n_train_sen_batches)):
-                            #total_sen_cost += sen_cost
                         cur_sen_cost = train_sen_model(minibatch_index_1)
                         sen_costs.append(cur_sen_cost)
                         set_zero(zero_vec)
@@ -318,7 +314,6 @@ def train_conv_net(datasets,
                  for i,p in enumerate(best_sen_param):
                      p.set_value(sen_params[i].get_value())
             epoch = epoch + 1
-
         for i,sp in enumerate(sen_params):
             sp.set_value(best_sen_param[i].get_value())
 
@@ -354,12 +349,10 @@ def train_conv_net(datasets,
     correct_index = np.where(np.array(test_loss)==0)[0]
     count_pos = 0
     test_labels = np.array(datasets[3])
-    print "vocabulary size: "
     print "negative estimated rationales: "
     print len(idx_word_map)
     for c in correct_index:
         if test_labels[c] == 1:continue
-        print sorted_sentence_value(c)
         print util.convert(sorted_sentence_value(c)[0],idx_word_map)
         print sorted_prob_val(c)
         count_pos += 1
@@ -522,8 +515,6 @@ def make_idx_data_cv(revs, word_idx_map, cv, max_sen_len=40,max_Doc_len=40, filt
         if rev["split"]==cv:
             test.append(sent)
             test_y.append(rev["y"])
-            print "test document: "
-            print sent
         else:
             train.append(sent)
             train_y.append(rev["y"])
