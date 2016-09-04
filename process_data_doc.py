@@ -185,11 +185,7 @@ def build_data_cv(data_folder, clean_string=True):
     print "average document length: " + str(total_doc_len/num_doc)
     print "average number of rationals: " + str(num_rational/num_doc)
     return revs, vocab
-    #max sentence length 666
-    #max document length 188
-    #average sentence length 21.2
-    #average document length   32.6
-    #average rationals : 7.24*2000/1800=8.0
+
 def get_W(word_vecs, k=300):
     """
     Get word matrix. W[i] is the vector for word indexed by i
@@ -271,25 +267,13 @@ if __name__=="__main__":
     data_folder = ["movies/withRats_pos","movies/withRats_neg"]
     print "loading data...",        
     revs, vocab = build_data_cv(data_folder, clean_string=True)
-    #for r in revs:
-      #  print r['split']
-    #max_l = np.max(pd.DataFrame(revs)["num_words"])
     print "data loaded!"
     print "number of documents: " + str(len(revs))
     print "vocab size: " + str(len(vocab))
-    #print "max sentence length: " + str(max_l)
     print "loading word2vec vectors...",
     w2v = load_bin_vec(w2v_file, vocab)
     print "word2vec loaded!"
     print "num words already in word2vec: " + str(len(w2v))
-    test_doc_file = open("test_doc_file",'wb')
-    for r in revs:
-        if r['split']==9:
-            sentences = r['text']
-            for s in sentences:
-                test_doc_file.write(s[0].strip()+"\n")
-            test_doc_file.write(str(r['y'])+'\n')
-    test_doc_file.close()
     add_unknown_words(w2v, vocab,min_df=1)
     W, word_idx_map = get_W(w2v)
     rand_vecs = {}
