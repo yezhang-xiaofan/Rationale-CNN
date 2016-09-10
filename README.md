@@ -15,6 +15,6 @@ Run the following, and the program will perform 9-fold cross validation (CV) on 
 ```
 THEANO_FLAGS=mode=FAST_RUN,device=gpu,floatX=float32 python rationale_CNN.py -nonstatic -word2vec
 ```
-This program should generate a mean accuracy around 91%, as reported in the paper. However, note that the optimal value of dropout rate on sentences when training document-level CNN might be different on different folds, and it is worth further tuning if you want to get a even better result. 
+This program should generate a mean accuracy around 90.11%~91%, as reported in the paper. However, note that the optimal value of dropout rate on sentences when training document-level CNN might be different on different folds, and it is worth further tuning if you want to get a even better result. 
 It can also generate predicted rationales with their probabilities for some correctly classified documents. 
 
