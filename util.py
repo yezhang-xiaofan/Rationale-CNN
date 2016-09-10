@@ -6,7 +6,6 @@ from nltk.tokenize import TreebankWordTokenizer
 def doc_to_sen(X_train):
     '''
     :X_train: shape: (number of docs * number of sentences * (sentence length + 1))
-    :return:
     '''
     num_Doc = X_train.shape[0]
     Doc_len = X_train.shape[1]
@@ -15,14 +14,10 @@ def doc_to_sen(X_train):
 
 def downsample(X_train):
     '''
-
-    :param X_train:
-    :param X_label:
     :return: equal sized positive and negative sentences
     '''
     num_pos = np.count_nonzero(X_train[:,-1])
     num_neg = X_train.shape[0]-num_pos
-    #print train[labels==1]
     print "number of positive sentences before downsampling: "
     print num_pos
     print "number of negative sentences before downsampling: "
@@ -30,8 +25,6 @@ def downsample(X_train):
     if num_neg>num_pos:
         neg_index =  np.nonzero((X_train[:,-1]==0))
         pos_index = np.nonzero((X_train[:,-1] == 1))
-        #print pos_index
-        #print neg_index
         select = X_train[np.random.permutation(neg_index[0])]  ###select negative sentences 
         new_select = np.zeros((num_pos,X_train.shape[1]))
         count_neg = 0
@@ -41,14 +34,12 @@ def downsample(X_train):
             count_neg += 1
             if count_neg == num_pos:
                 break
-        #print select
         train = np.vstack((X_train[pos_index[0]],new_select))
         return train
 
 def downsample_three(X_train):
     '''
-    :param X_train:
-    :return: equal sized positive and negative sentences
+    :return: equal sized positive, negative and neutral sentences
     '''
     num_neg = np.count_nonzero(X_train[:,-1]==0)
     num_neu = np.count_nonzero(X_train[:,-1]==1)
@@ -112,7 +103,6 @@ def downsample_three(X_train):
 
 def create_batch(sentences,batch_size):
     '''
-    :param sentences:
     :return: train batches, val batches
     '''
     if sentences.shape[0] % batch_size > 0:
@@ -132,7 +122,6 @@ def create_batch(sentences,batch_size):
 def generate_voc(X,min_df=4):
     '''
     :param X: list of documents
-    :return:
     '''
     word_Count = {}
     for x in X:
@@ -156,10 +145,6 @@ def remove(sentences):  ###remove "false" sentences
     return sentences[np.array(new_indices)]
 
 def convert(sentences,idx_to_word):
-    '''
-    :param sentences:
-    :return:
-    '''
     final_res = []
     for i in range(sentences.shape[0]):
         if np.sum(sentences[i])==0: continue
