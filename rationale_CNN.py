@@ -335,7 +335,8 @@ def train_conv_net(datasets,
     count_pos = 0
     test_labels = np.array(datasets[3])
 
-    #generate estimated two positive rationales and two negative rationales from correctly predicted documents
+    # sample two correctly predicted positive documents and two correctly predicted negative documents
+    # for each document, generate top five rationales with highest probabilities
     print "negative estimated rationales: "
     print len(idx_word_map)
     for c in correct_index:
