@@ -33,15 +33,7 @@ def train_conv_net(datasets,
                    non_static=True,
                    sen_dropout_rate=[0.0],
                               whether_train_sen=True):
-    """
-    Train a simple conv net
-    img_h = sentence length (padded where necessary)
-    img_w = word vector length (300 for word2vec)
-    filter_hs = filter window sizes
-    hidden_units = [x,y] x is the number of feature maps (per filter window), and y is the penultimate layer
-    sqr_norm_lim = s^2 in the paper
-    lr_decay = adadelta decay parameter
-    """
+
     rng = np.random.RandomState(3435)
     img_h = datasets[0][0][0].shape[0]-1
     filter_w = img_w
@@ -80,23 +72,19 @@ def train_conv_net(datasets,
         filter_shape = filter_shapes[i]
         pool_size = pool_sizes[i]
         conv_layer = LeNetConvPoolLayer(rng, input=layer0_input,
-                                        #image_shape=(batch_size*Doc_length, 1, img_h, img_w),
                                         image_shape=(None,1,img_h,img_w),
                                 filter_shape=filter_shape, poolsize=pool_size, non_linear=conv_non_linear)
         layer1_input = conv_layer.output.flatten(2)
         conv_layers.append(conv_layer)
         layer1_inputs.append(layer1_input)
-
         sen_layer1_input = conv_layer.predict(sen_layer0_input,None).flatten(2)
         sen_layer1_inputs.append(sen_layer1_input)
 
     layer1_input = T.concatenate(layer1_inputs,1)
     sen_layer1_input = T.concatenate(sen_layer1_inputs,1)
-
     hidden_units[0] = feature_maps*len(filter_hs)
     sen_hidden_units = [feature_maps*len(filter_hs),3]
     shaped_mark = T.flatten(mark)
-
     sen_classifier1 = MLPDropout(rng,input=sen_layer1_input,layer_sizes=sen_hidden_units,activations=activations,
                                  dropout_rates=sen_dropout_rate)
     sen_cost = sen_classifier1.dropout_negative_log_likelihood(sen_y)
@@ -114,7 +102,6 @@ def train_conv_net(datasets,
     for conv_layer in conv_layers:
         params += conv_layer.params
     if non_static:
-        #if word vectors are allowed to change, add them as model parameters
         params += [Words]
 
     #add sentence level parameters
@@ -129,8 +116,6 @@ def train_conv_net(datasets,
     grad_updates = sgd_updates_adadelta(params, dropout_cost, lr_decay, 1e-6, sqr_norm_lim)
     sen_grad_updates = sgd_updates_adadelta(sen_params,sen_cost,lr_decay,1e-6,sqr_norm_lim)
 
-    #shuffle dataset and assign to mini batches. if dataset size is not a multiple of mini batches, replicate
-    #extra data (at random)
     np.random.seed(3435)
     train_mask = np.zeros((datasets[0].shape[0],datasets[0].shape[1]),dtype='float32')  ##doc length * number of documnts
     test_mask = np.zeros((datasets[2].shape[0],datasets[2].shape[1]),dtype='float32')
@@ -157,6 +142,7 @@ def train_conv_net(datasets,
 
     n_batches = new_data.shape[0]/batch_size
     n_train_batches = int(np.round(n_batches*0.9))
+
     #divide train set into train/val sets
     train_set_y = datasets[1][permuted_index]
     test_set_x,test_set_y = shared_dataset((datasets[2][:,:,:-1],datasets[3]))
@@ -254,7 +240,6 @@ def train_conv_net(datasets,
                                          y:test_set_y[index*test_batch_size:(index+1)*test_batch_size],
                                      mark:test_set_mark[index*test_batch_size:(index+1)*test_batch_size],})
 
-    #start training over mini-batches
     print '... training'
     epoch = 0
     best_val_perf = 0
@@ -266,7 +251,7 @@ def train_conv_net(datasets,
     for p in sen_params:
         best_sen_param.append(theano.shared(p.get_value()))
 
-    #training on sentences
+    #first training on sentences
     best_sen_val = 0.0
     if whether_train_sen == True:
         print 'pre-train on sentences'
@@ -317,6 +302,7 @@ def train_conv_net(datasets,
         for i,sp in enumerate(sen_params):
             sp.set_value(best_sen_param[i].get_value())
 
+    #train on documents
     epoch = 0
     while (epoch < n_epochs):
         start_time = time.time()
@@ -348,6 +334,8 @@ def train_conv_net(datasets,
     correct_index = np.where(np.array(test_loss)==0)[0]
     count_pos = 0
     test_labels = np.array(datasets[3])
+
+    #generate estimated two positive rationales and two negative rationales from correctly predicted documents
     print "negative estimated rationales: "
     print len(idx_word_map)
     for c in correct_index:
@@ -553,7 +541,7 @@ if __name__=="__main__":
     r = range(0,10)
     for i in r:
         if i == 9 :continue
-        datasets = make_idx_data_cv(revs, word_idx_map, i, max_sen_len=30,max_Doc_len=40, filter_h=5)
+        datasets = make_idx_data_cv(revs, word_idx_map, i, max_sen_len=30, max_Doc_len=40, filter_h=5)
         perf = train_conv_net(datasets,
                               U,
                               idx_word_map,
